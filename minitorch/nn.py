@@ -99,7 +99,7 @@ def softmax(t: Tensor, dim: int) -> Tensor:
 
 
 def logsoftmax(t: Tensor, dim: int) -> Tensor:
-    """Simplified version of softmax for faster computations"""
+    """More numerically stable version of softmax"""
     maxval = max(t, dim)
     return t - ((t - maxval).exp().sum(dim).log() + maxval)
 
