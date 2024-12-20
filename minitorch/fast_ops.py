@@ -193,7 +193,7 @@ def tensor_map(
         else:
             out_idx = np.empty_like(out_shape, np.int64)
             in_idx = np.empty_like(in_shape, np.int64)
-            for i in prange(len(out)):
+            for i in range(len(out)):
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
 

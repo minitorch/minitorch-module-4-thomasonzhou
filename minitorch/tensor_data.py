@@ -44,8 +44,8 @@ def index_to_position(index: Index, strides: Strides) -> int:
 
     """
     pos = 0
-    for i, s in zip(index, strides):
-        pos += i * s
+    for i, stride in zip(index, strides):
+        pos += i * stride
     return pos
 
 

@@ -90,9 +90,30 @@ def _tensor_conv1d(
     s1 = input_strides
     s2 = weight_strides
 
-    # TODO: Implement for Task 4.1.
-    raise NotImplementedError("Need to implement for Task 4.1")
+    for i in prange(out_size):
+        out_idx = np.empty_like(out_shape, dtype=np.int32) # out_batch, out_channels, out_width
+        to_index(i, out_shape, out_idx)
 
+        total = 0
+        for in_channel in prange(in_channels):
+            for k in range(kw):
+                if reverse:
+                    k = kw - k - 1
+                w = weight[out_idx[1] * s2[0] + in_channel * s2[1] + k * s2[2]]
+
+                in_val = 0
+                common_in_idx_prefix = out_idx[0] * s1[0] + in_channel * s1[1]
+                if reverse:
+                    reverse_offset = out_idx[2] - k
+                    if reverse_offset>= 0:
+                        in_val = input[common_in_idx_prefix + reverse_offset * s1[2]]
+                else:
+                    forward_offset = k + out_idx[2] 
+                    if forward_offset < width:
+                        in_val = input[common_in_idx_prefix + forward_offset * s1[2]]
+                total += w * in_val
+
+        out[index_to_position(out_idx, out_strides)] = total
 
 tensor_conv1d = njit(_tensor_conv1d, parallel=True)
 
