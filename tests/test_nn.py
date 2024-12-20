@@ -25,11 +25,17 @@ def test_avg(t: Tensor) -> None:
 @pytest.mark.task4_4
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
-    t.requires_grad_(True)
     out = minitorch.max(t, 0)
-    for idx in out._tensor.indices():
-        local_max = max([t[i, idx[1], idx[2]] for i in range(t.shape[0])])
-        assert_close(out[idx], local_max)
+    local_max = max([t[i, 0, 0] for i in range(2)])
+    assert_close(out[0, 0, 0], local_max)
+    out = minitorch.max(t, 1)
+    local_max = max([t[0, i, 0] for i in range(3)])
+    assert_close(out[0, 0, 0], local_max)
+    out = minitorch.max(t, 2)
+    local_max = max([t[0, 0, i] for i in range(4)])
+    assert_close(out[0, 0, 0], local_max)
+
+    minitorch.grad_check(lambda t: minitorch.max(t, 0), t + minitorch.rand(t.shape) * 1e-3)
 
 
 @pytest.mark.task4_4

@@ -41,8 +41,7 @@ class Conv2d(minitorch.Module):
         self.bias = RParam(out_channels, 1, 1)
 
     def forward(self, input):
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        return minitorch.conv2d(input, self.weights.value) + self.bias.value
 
 
 class Network(minitorch.Module):
@@ -67,12 +66,26 @@ class Network(minitorch.Module):
         self.mid = None
         self.out = None
 
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.conv1 = Conv2d(1, 4, 3, 3)
+        self.conv2 = Conv2d(4, 8, 3, 3)
+
+        self.linear1 = Linear(392, 64)
+        self.linear2 = Linear(64, C)
 
     def forward(self, x):
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+
+        x = self.conv1(x).relu()
+        self.mid = x
+        x = self.conv2(x).relu()
+        self.out = x
+        x = minitorch.avgpool2d(x, (4, 4))
+        x = x.view(BATCH, 392)
+
+        x = self.linear1(x).relu()
+        x = minitorch.dropout(x, 0.25, ignore=not self.training)
+        x = self.linear2(x)
+        return minitorch.logsoftmax(x, 1)
+
 
 
 def make_mnist(start, stop):
@@ -99,7 +112,7 @@ class ImageTrain:
         return self.model.forward(minitorch.tensor([x], backend=BACKEND))
 
     def train(
-        self, data_train, data_val, learning_rate, max_epochs=500, log_fn=default_log_fn
+        self, data_train, data_val, learning_rate, max_epochs=500, log_fn=default_log_fn, batched: bool = False
     ):
         (X_train, y_train) = data_train
         (X_val, y_val) = data_val
@@ -163,7 +176,10 @@ class ImageTrain:
                                     m = out[i, j]
                             if y[i, ind] == 1.0:
                                 correct += 1
-                    log_fn(epoch, total_loss, correct, BATCH, losses, model)
+                    if batched:
+                        log_fn(epoch, total_loss, correct, BATCH, losses, model)
+                    else:
+                        log_fn(epoch, total_loss, correct, losses, model)
 
                     total_loss = 0.0
                     model.train()
@@ -171,4 +187,4 @@ class ImageTrain:
 
 if __name__ == "__main__":
     data_train, data_val = (make_mnist(0, 5000), make_mnist(10000, 10500))
-    ImageTrain().train(data_train, data_val, learning_rate=0.01)
+    ImageTrain().train(data_train, data_val, learning_rate=0.01, batched=True)

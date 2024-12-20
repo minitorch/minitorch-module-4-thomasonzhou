@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from typing import Callable, Optional
 
     from .tensor import Tensor
-    from .tensor_data import Index, Shape, Storage, Strides
+    from .tensor_data import Shape, Storage, Strides
 
 # TIP: Use `NUMBA_DISABLE_JIT=1 pytest tests/ -m task3_1` to run these tests without JIT.
 
@@ -140,14 +140,10 @@ class FastOps(TensorOps):
 @_njit
 def _stride_aligned(shape_1: Shape, strides_1: Strides, shape_2: Shape, strides_2: Strides) -> bool:
     """Check if the shapes and strides allow for a one to one mapping of input to output position"""
-
     if len(shape_1) != len(shape_2):
         return False
-    for st1, st2 in zip(strides_1, strides_2):
-        if st1 != st2:
-            return False
-    for sh1, sh2 in zip(shape_1, shape_2):
-        if sh1 != sh2:
+    for i in prange(len(shape_1)):
+        if strides_1[i] != strides_2[i] or shape_1[i] != shape_2[i]:
             return False
     return True
 
@@ -186,8 +182,8 @@ def tensor_map(
                 out[i] = fn(in_storage[i])
         else:
             for i in prange(len(out)):
-                out_idx = np.empty_like(out_shape, np.int64)
-                in_idx = np.empty_like(in_shape, np.int64)
+                out_idx = np.empty_like(out_shape, np.int32)
+                in_idx = np.empty_like(in_shape, np.int32)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
 
@@ -236,10 +232,10 @@ def tensor_zip(
             for i in prange(len(out)):
                 out[i] = fn(a_storage[i], b_storage[i])
         else:
-            out_idx = np.empty_like(out_shape, np.int64)
-            a_idx = np.empty_like(a_shape, np.int64)
-            b_idx = np.empty_like(b_shape, np.int64)
             for i in prange(len(out)):
+                out_idx = np.empty_like(out_shape, np.int32)
+                a_idx = np.empty_like(a_shape, np.int32)
+                b_idx = np.empty_like(b_shape, np.int32)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, a_shape, a_idx)
                 broadcast_index(out_idx, out_shape, b_shape, b_idx)
@@ -284,8 +280,8 @@ def tensor_reduce(
         reduce_dim: int,
     ) -> None:
         for i in prange(len(a_storage)):
-            out_idx = np.empty_like(out_shape, np.int64)
-            a_idx = np.empty_like(a_shape, np.int64)
+            out_idx = np.empty_like(out_shape, np.int32)
+            a_idx = np.empty_like(a_shape, np.int32)
             to_index(i, a_shape, a_idx)
             broadcast_index(a_idx, a_shape, out_shape, out_idx)
 

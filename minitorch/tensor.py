@@ -146,6 +146,9 @@ class Tensor:
     def __sub__(self, b: TensorLike) -> Tensor:
         return Add.apply(self, -self._ensure_tensor(b))
 
+    def __rsub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self._ensure_tensor(b), -self)
+
     def __mul__(self, b: TensorLike) -> Tensor:
         return Mul.apply(self, self._ensure_tensor(b))
 
