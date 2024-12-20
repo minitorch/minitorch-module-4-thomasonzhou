@@ -77,7 +77,7 @@ class CNNSentimentKim(minitorch.Module):
         
         convs = [conv(x).relu() for conv in self.conv1d_layers] # feature maps
 
-        x = sum(minitorch.max(layer, 2) for layer in convs) # max over time
+        x = minitorch.max(convs[0], 2) + minitorch.max(convs[2], 2) + minitorch.max(convs[2], 2) # max over time
 
         x = self.linear_layer(x.view(x.shape[0], x.shape[1]))
         x = minitorch.dropout(x, self.dropout, ignore=not self.training)

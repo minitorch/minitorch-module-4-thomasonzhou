@@ -139,9 +139,9 @@ def relu_back(x: float, deriv: float) -> float:
 # - addLists : add two lists together
 # - sum: sum lists
 # - prod: take the product of lists
-def map(f: Callable[float, float], l: list) -> list:
+def map(f: Callable[float, float], l1: list) -> list:
     """Apply a function f to each element of list l."""
-    return [f(val) for val in l]
+    return [f(val) for val in l1]
 
 
 def zipWith(f: Callable[[float, float], float], l1: list, l2: list) -> list:
