@@ -240,8 +240,37 @@ def _tensor_conv2d(
     s10, s11, s12, s13 = s1[0], s1[1], s1[2], s1[3]
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
 
-    # TODO: Implement for Task 4.2.
-    raise NotImplementedError("Need to implement for Task 4.2")
+    for i in prange(out_size):
+        out_idx = np.empty_like(out_shape, dtype=np.int32) # out_batch, out_channels, out_height, out_width
+        to_index(i, out_shape, out_idx)
+
+        total = 0
+        for in_channel in prange(in_channels):
+            for h in range(kh):
+                for w in range(kw):
+                    if reverse:
+                        h = kh - h - 1
+                        w = kw - w - 1
+                    
+                    curr_weight = weight[out_idx[1] * s20 + in_channel * s21 + h * s22 + w * s23]
+                    
+                    in_val = 0
+                    common_pos_offset = out_idx[0] * s10 + in_channel * s11
+                    if reverse:
+                        reverse_h = out_idx[2] - h
+                        reverse_w = out_idx[3] - w
+                        if reverse_h >= 0 and reverse_w >= 0:
+                            in_val = input[int(common_pos_offset + reverse_h * s12 + reverse_w * s13)]
+                    else:
+                        forward_h = out_idx[2] + h
+                        forward_w = out_idx[3] + w
+                        if forward_h < height and forward_w < width:
+                            in_val = input[int(common_pos_offset + forward_h * s12 + forward_w * s13)]
+                    total += curr_weight * in_val
+        
+        out[index_to_position(out_idx, out_strides)] = total
+
+
 
 
 tensor_conv2d = njit(_tensor_conv2d, parallel=True, fastmath=True)
