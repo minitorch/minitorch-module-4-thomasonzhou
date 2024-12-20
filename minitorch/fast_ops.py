@@ -6,20 +6,14 @@ import numpy as np
 from numba import prange
 from numba import njit as _njit
 
-from .tensor_data import (
-    MAX_DIMS,
-    broadcast_index,
-    index_to_position,
-    shape_broadcast,
-    to_index,
-)
+from .tensor_data import broadcast_index, index_to_position, shape_broadcast, to_index
 from .tensor_ops import MapProto, TensorOps
 
 if TYPE_CHECKING:
     from typing import Callable, Optional
 
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides
+    from .tensor_data import Index, Shape, Storage, Strides
 
 # TIP: Use `NUMBA_DISABLE_JIT=1 pytest tests/ -m task3_1` to run these tests without JIT.
 
@@ -30,6 +24,7 @@ Fn = TypeVar("Fn")
 
 
 def njit(fn: Fn, **kwargs: Any) -> Fn:
+    """Wrapper for repeated JIT options"""
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
 
@@ -42,7 +37,6 @@ class FastOps(TensorOps):
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
         """See `tensor_ops.py`"""
-        # This line JIT compiles your tensor_map
         f = tensor_map(njit(fn))
 
         def ret(a: Tensor, out: Optional[Tensor] = None) -> Tensor:
@@ -182,8 +176,8 @@ def tensor_map(
                 out[i] = fn(in_storage[i])
         else:
             for i in prange(len(out)):
-                out_idx = np.empty_like(out_shape, np.int32)
-                in_idx = np.empty_like(in_shape, np.int32)
+                out_idx: Index = np.empty_like(out_shape, np.int32)
+                in_idx: Index = np.empty_like(in_shape, np.int32)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
 
@@ -233,9 +227,9 @@ def tensor_zip(
                 out[i] = fn(a_storage[i], b_storage[i])
         else:
             for i in prange(len(out)):
-                out_idx = np.empty_like(out_shape, np.int32)
-                a_idx = np.empty_like(a_shape, np.int32)
-                b_idx = np.empty_like(b_shape, np.int32)
+                out_idx: Index = np.empty_like(out_shape, np.int32)
+                a_idx: Index = np.empty_like(a_shape, np.int32)
+                b_idx: Index = np.empty_like(b_shape, np.int32)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, a_shape, a_idx)
                 broadcast_index(out_idx, out_shape, b_shape, b_idx)
@@ -279,16 +273,19 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        for i in prange(len(a_storage)):
-            out_idx = np.empty_like(out_shape, np.int32)
-            a_idx = np.empty_like(a_shape, np.int32)
-            to_index(i, a_shape, a_idx)
-            broadcast_index(a_idx, a_shape, out_shape, out_idx)
+        for i in prange(len(out)):
+            out_idx: Index = np.empty_like(out_shape, np.int32)
+            to_index(i, out_shape, out_idx)
 
-            a_pos = index_to_position(a_idx, a_strides)
             out_pos = index_to_position(out_idx, out_strides)
 
-            out[out_pos] = fn(out[out_pos], a_storage[a_pos])
+            a_start_pos = index_to_position(
+                out_idx, a_strides
+            )  # same dimensions except for reduced
+            reduced_val = out[out_pos]
+            for j in range(a_shape[reduce_dim]):
+                reduced_val = fn(reduced_val, a_storage[a_start_pos + j * a_strides[reduce_dim]])
+            out[out_pos] = reduced_val
 
     return njit(_reduce, parallel=True)  # type: ignore
 
@@ -344,7 +341,7 @@ def _tensor_matrix_multiply(
             for k in prange(b_shape[-1]):
                 out_pos = batch * out_strides[0] + i * out_strides[1] + k * out_strides[2]
                 total = 0
-                for j in prange(a_shape[-1]):  # common dim
+                for j in range(a_shape[-1]):  # common dim
                     a_pos = batch * a_batch_stride + i * a_strides[1] + j * a_strides[2]
                     b_pos = batch * b_batch_stride + j * b_strides[1] + k * b_strides[2]
                     total += a_storage[a_pos] * b_storage[b_pos]

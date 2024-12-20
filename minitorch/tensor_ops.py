@@ -44,8 +44,7 @@ class TensorOps:
 
 class TensorBackend:
     def __init__(self, ops: Type[TensorOps]):
-        """
-        Dynamically construct a tensor backend based on a `tensor_ops` object
+        """Dynamically construct a tensor backend based on a `tensor_ops` object
         that implements map, zip, and reduce higher-order functions.
 
         Args:
@@ -56,7 +55,6 @@ class TensorBackend:
             A collection of tensor functions
 
         """
-
         # Maps
         self.neg_map = ops.map(operators.neg)
         self.sigmoid_map = ops.map(operators.sigmoid)
@@ -87,8 +85,7 @@ class TensorBackend:
 class SimpleOps(TensorOps):
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
-        """
-        Higher-order tensor map function ::
+        """Higher-order tensor map function ::
 
           fn_map = map(fn)
           fn_map(a, out)
@@ -114,8 +111,8 @@ class SimpleOps(TensorOps):
 
         Returns:
             new tensor data
-        """
 
+        """
         f = tensor_map(fn)
 
         def ret(a: Tensor, out: Optional[Tensor] = None) -> Tensor:
@@ -128,8 +125,7 @@ class SimpleOps(TensorOps):
 
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[["Tensor", "Tensor"], "Tensor"]:
-        """
-        Higher-order tensor zip function ::
+        """Higher-order tensor zip function ::
 
           fn_zip = zip(fn)
           out = fn_zip(a, b)
@@ -154,8 +150,8 @@ class SimpleOps(TensorOps):
 
         Returns:
             :class:`TensorData` : new tensor data
-        """
 
+        """
         f = tensor_zip(fn)
 
         def ret(a: "Tensor", b: "Tensor") -> "Tensor":
@@ -173,8 +169,7 @@ class SimpleOps(TensorOps):
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[["Tensor", int], "Tensor"]:
-        """
-        Higher-order tensor reduce function. ::
+        """Higher-order tensor reduce function. ::
 
           fn_reduce = reduce(fn)
           out = fn_reduce(a, dim)
@@ -194,6 +189,7 @@ class SimpleOps(TensorOps):
 
         Returns:
             :class:`TensorData` : new tensor
+
         """
         f = tensor_reduce(fn)
 
@@ -212,6 +208,7 @@ class SimpleOps(TensorOps):
 
     @staticmethod
     def matrix_multiply(a: "Tensor", b: "Tensor") -> "Tensor":
+        """Supported in fast_ops and cuda_ops"""
         raise NotImplementedError("Not implemented in simple backend, see fast_ops or cuda_ops")
 
     is_cuda = False
@@ -221,8 +218,7 @@ class SimpleOps(TensorOps):
 
 
 def tensor_map(fn: Callable[[float], float]) -> Any:
-    """
-    Low-level implementation of tensor map between
+    """Low-level implementation of tensor map between
     tensors with *possibly different strides*.
 
     Simple version:
@@ -248,6 +244,7 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
 
     Returns:
         None : Fills in `out`
+
     """
 
     def _map(
@@ -274,8 +271,7 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
 
 
 def tensor_zip(fn: Callable[[float, float], float]) -> Any:
-    """
-    Low-level implementation of tensor zip between
+    """Low-level implementation of tensor zip between
     tensors with *possibly different strides*.
 
     Simple version:
@@ -304,6 +300,7 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
 
     Returns:
         None : Fills in `out`
+
     """
 
     def _zip(
@@ -336,8 +333,7 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
 
 
 def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
-    """
-    Low-level implementation of tensor reduce.
+    """Low-level implementation of tensor reduce.
 
     * `out_shape` will be the same as `a_shape`
        except with `reduce_dim` turned to size `1`
@@ -354,6 +350,7 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
 
     Returns:
         None : Fills in `out`
+
     """
 
     def _reduce(

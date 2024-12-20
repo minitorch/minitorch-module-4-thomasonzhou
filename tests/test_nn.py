@@ -35,7 +35,9 @@ def test_max(t: Tensor) -> None:
     local_max = max([t[0, 0, i] for i in range(4)])
     assert_close(out[0, 0, 0], local_max)
 
-    minitorch.grad_check(lambda t: minitorch.max(t, 0), t + minitorch.rand(t.shape) * 1e-3)
+    minitorch.grad_check(lambda t: minitorch.max(t, 0), t + minitorch.rand(t.shape) * 10)
+    minitorch.grad_check(lambda t: minitorch.max(t, 1), t + minitorch.rand(t.shape) * 10)
+    minitorch.grad_check(lambda t: minitorch.max(t, 1), t + minitorch.rand(t.shape) * 10)
 
 
 @pytest.mark.task4_4
