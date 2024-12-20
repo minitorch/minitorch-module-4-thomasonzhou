@@ -71,7 +71,7 @@ def eq(x: float, y: float) -> float:
 
 def max(x: float, y: float) -> float:
     """Find the max of x and y."""
-    if lt(x, y):
+    if x < y:
         return y
     return x
 
@@ -104,7 +104,7 @@ def inv(x: float) -> float:
 
 def sigmoid(x: float) -> float:
     """Compute the sigmoid of x."""
-    return 1.0/(1.0 + math.exp(-x))
+    return 1.0 / (1.0 + math.exp(-x))
 
 
 def log_back(x: float, deriv: float) -> float:
@@ -114,7 +114,7 @@ def log_back(x: float, deriv: float) -> float:
 
 def inv_back(x: float, deriv: float) -> float:
     """Compute the derivative of inv times a value."""
-    return - deriv / (x ** 2)
+    return -deriv / (x**2)
 
 
 def relu_back(x: float, deriv: float) -> float:

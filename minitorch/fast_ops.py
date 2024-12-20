@@ -138,12 +138,7 @@ class FastOps(TensorOps):
 
 # Implementations
 @_njit
-def _stride_aligned(
-    shape_1: Shape, 
-    strides_1: Strides, 
-    shape_2: Shape, 
-    strides_2: Strides
-    ) -> bool:
+def _stride_aligned(shape_1: Shape, strides_1: Strides, shape_2: Shape, strides_2: Strides) -> bool:
     """Check if the shapes and strides allow for a one to one mapping of input to output position"""
 
     if len(shape_1) != len(shape_2):
@@ -186,14 +181,13 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-
         if _stride_aligned(out_shape, out_strides, in_shape, in_strides):
             for i in prange(len(out)):
                 out[i] = fn(in_storage[i])
         else:
-            out_idx = np.empty_like(out_shape, np.int64)
-            in_idx = np.empty_like(in_shape, np.int64)
-            for i in range(len(out)):
+            for i in prange(len(out)):
+                out_idx = np.empty_like(out_shape, np.int64)
+                in_idx = np.empty_like(in_shape, np.int64)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
 
@@ -206,9 +200,7 @@ def tensor_map(
 
 def tensor_zip(
     fn: Callable[[float, float], float],
-) -> Callable[
-    [Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None
-]:
+) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None]:
     """NUMBA higher-order tensor zip function. See `tensor_ops.py` for description.
 
     Optimizations:
@@ -238,8 +230,9 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        if _stride_aligned(a_shape, a_strides, b_shape, b_strides) \
-            and _stride_aligned(a_shape, a_strides, out_shape, out_strides):
+        if _stride_aligned(a_shape, a_strides, b_shape, b_strides) and _stride_aligned(
+            a_shape, a_strides, out_shape, out_strides
+        ):
             for i in prange(len(out)):
                 out[i] = fn(a_storage[i], b_storage[i])
         else:
@@ -250,7 +243,7 @@ def tensor_zip(
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, a_shape, a_idx)
                 broadcast_index(out_idx, out_shape, b_shape, b_idx)
-                
+
                 out_pos = index_to_position(out_idx, out_strides)
                 a_pos = index_to_position(a_idx, a_strides)
                 b_pos = index_to_position(b_idx, b_strides)
@@ -290,9 +283,9 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        a_idx = np.empty_like(a_shape, np.int64)
-        out_idx = np.empty_like(out_shape, np.int64)
         for i in prange(len(a_storage)):
+            out_idx = np.empty_like(out_shape, np.int64)
+            a_idx = np.empty_like(a_shape, np.int64)
             to_index(i, a_shape, a_idx)
             broadcast_index(a_idx, a_shape, out_shape, out_idx)
 
@@ -300,7 +293,6 @@ def tensor_reduce(
             out_pos = index_to_position(out_idx, out_strides)
 
             out[out_pos] = fn(out[out_pos], a_storage[a_pos])
-
 
     return njit(_reduce, parallel=True)  # type: ignore
 
@@ -356,11 +348,12 @@ def _tensor_matrix_multiply(
             for k in prange(b_shape[-1]):
                 out_pos = batch * out_strides[0] + i * out_strides[1] + k * out_strides[2]
                 total = 0
-                for j in prange(a_shape[-1]): # common dim
+                for j in prange(a_shape[-1]):  # common dim
                     a_pos = batch * a_batch_stride + i * a_strides[1] + j * a_strides[2]
                     b_pos = batch * b_batch_stride + j * b_strides[1] + k * b_strides[2]
                     total += a_storage[a_pos] * b_storage[b_pos]
                 out[out_pos] = total
+
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
 assert tensor_matrix_multiply is not None
