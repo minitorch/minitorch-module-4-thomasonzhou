@@ -35,8 +35,27 @@ def tile(input: Tensor, kernel: Tuple[int, int]) -> Tuple[Tensor, int, int]:
     kh, kw = kernel
     assert height % kh == 0
     assert width % kw == 0
-    # TODO: Implement for Task 4.3.
-    raise NotImplementedError("Need to implement for Task 4.3")
+
+    new_height = height // kh
+    new_width = width // kw
+
+    return (
+        input.contiguous()
+        .view(batch, channel, height, new_width, kw)
+        .permute(0, 1, 3, 2, 4)  # reorder height to be next to kh when splitting
+        .contiguous()
+        .view(batch, channel, new_height, new_width, kh * kw),
+        new_height,
+        new_width,
+    )
 
 
-# TODO: Implement for Task 4.3.
+def avgpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
+    """Compute the mean over the last dimension of input"""
+    tiled_tensor, new_height, new_width = tile(input, kernel)
+    batch, channel, _new_height, _new_width, k = tiled_tensor.shape
+    return tiled_tensor.mean(4).view(batch, channel, new_height, new_width)
+
+
+def argmax(input: Tensor):
+    pass
