@@ -47,7 +47,7 @@ class CNNSentimentKim(minitorch.Module):
         feature_map_size=100 output channels and [3, 4, 5]-sized kernels
         followed by a non-linear activation function (the paper uses tanh, we apply a ReLu)
     2. Apply max-over-time across each feature map
-    3. Apply a Linear to size C (number of classes) followed by a ReLU and Dropout with rate 25%
+    3. Apply a Linear to size C (number of classes) followed by a Dropout with rate 25%
     4. Apply a sigmoid over the class dimension.
     """
 
@@ -79,9 +79,9 @@ class CNNSentimentKim(minitorch.Module):
 
         x = sum(minitorch.max(layer, 2) for layer in convs) # max over time
 
-        x = self.linear_layer(x.view(batch, self.feature_map_size)).relu()
+        x = self.linear_layer(x.view(x.shape[0], x.shape[1]))
         x = minitorch.dropout(x, self.dropout, ignore=not self.training)
-        return x
+        return x.sigmoid().view(batch)
 
 # Evaluation helper methods
 def get_predictions_array(y_true, model_output):
