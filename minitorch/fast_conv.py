@@ -7,7 +7,6 @@ from numba import njit as _njit
 from .autodiff import Context
 from .tensor import Tensor
 from .tensor_data import (
-    MAX_DIMS,
     Index,
     Shape,
     Strides,
@@ -61,7 +60,6 @@ def _tensor_conv1d(
        `batch, out_channels, width`
 
     `reverse` decides if weight is anchored left (False) or right.
-    (See diagrams)
 
     Args:
     ----
@@ -82,16 +80,34 @@ def _tensor_conv1d(
     batch, in_channels, width = input_shape
     out_channels_, in_channels_, kw = weight_shape
 
-    assert (
-        batch == batch_
-        and in_channels == in_channels_
-        and out_channels == out_channels_
-    )
+    assert batch == batch_ and in_channels == in_channels_ and out_channels == out_channels_
     s1 = input_strides
     s2 = weight_strides
 
-    # TODO: Implement for Task 4.1.
-    raise NotImplementedError("Need to implement for Task 4.1")
+    for i in prange(out_size):
+        out_idx = np.empty_like(out_shape, dtype=np.int32)  # out_batch, out_channels, out_width
+        to_index(i, out_shape, out_idx)
+
+        total = 0
+        for in_channel in prange(in_channels):
+            for k in range(kw):
+                if reverse:
+                    k = kw - k - 1
+                w = weight[out_idx[1] * s2[0] + in_channel * s2[1] + k * s2[2]]
+
+                in_val = 0
+                common_in_idx_prefix = out_idx[0] * s1[0] + in_channel * s1[1]
+                if reverse:
+                    reverse_offset = out_idx[2] - k
+                    if reverse_offset >= 0:
+                        in_val = input[common_in_idx_prefix + reverse_offset * s1[2]]
+                else:
+                    forward_offset = k + out_idx[2]
+                    if forward_offset < width:
+                        in_val = input[common_in_idx_prefix + forward_offset * s1[2]]
+                total += w * in_val
+
+        out[index_to_position(out_idx, out_strides)] = total
 
 
 tensor_conv1d = njit(_tensor_conv1d, parallel=True)
@@ -118,11 +134,8 @@ class Conv1dFun(Function):
         out_channels, in_channels2, kw = weight.shape
         assert in_channels == in_channels2
 
-        # Run convolution
         output = input.zeros((batch, out_channels, w))
-        tensor_conv1d(
-            *output.tuple(), output.size, *input.tuple(), *weight.tuple(), False
-        )
+        tensor_conv1d(*output.tuple(), output.size, *input.tuple(), *weight.tuple(), False)
         return output
 
     @staticmethod
@@ -133,23 +146,23 @@ class Conv1dFun(Function):
         grad_weight = grad_output.zeros((in_channels, out_channels, kw))
         new_input = input.permute(1, 0, 2)
         new_grad_output = grad_output.permute(1, 0, 2)
-        tensor_conv1d(  # type: ignore
+        tensor_conv1d(  # type: ignore[call-arg]
             *grad_weight.tuple(),
             grad_weight.size,
             *new_input.tuple(),
             *new_grad_output.tuple(),
-            False,  # type: ignore
+            False,
         )
         grad_weight = grad_weight.permute(1, 0, 2)
 
         grad_input = input.zeros((batch, in_channels, w))
         new_weight = weight.permute(1, 0, 2)
-        tensor_conv1d(  # type: ignore
+        tensor_conv1d(  # type: ignore[call-arg]
             *grad_input.tuple(),
-            grad_input.size,  # type: ignore
+            grad_input.size,
             *grad_output.tuple(),
             *new_weight.tuple(),
-            True,  # type: ignore
+            True,
         )
         return grad_input, grad_weight
 
@@ -185,7 +198,6 @@ def _tensor_conv2d(
        `batch, out_channels, height, width`
 
     `Reverse` decides if weight is anchored top-left (False) or bottom-right.
-    (See diagrams)
 
 
     Args:
@@ -207,11 +219,7 @@ def _tensor_conv2d(
     batch, in_channels, height, width = input_shape
     out_channels_, in_channels_, kh, kw = weight_shape
 
-    assert (
-        batch == batch_
-        and in_channels == in_channels_
-        and out_channels == out_channels_
-    )
+    assert batch == batch_ and in_channels == in_channels_ and out_channels == out_channels_
 
     s1 = input_strides
     s2 = weight_strides
@@ -219,8 +227,41 @@ def _tensor_conv2d(
     s10, s11, s12, s13 = s1[0], s1[1], s1[2], s1[3]
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
 
-    # TODO: Implement for Task 4.2.
-    raise NotImplementedError("Need to implement for Task 4.2")
+    for i in prange(out_size):
+        out_idx: Index = np.empty_like(
+            out_shape, dtype=np.int32
+        )  # out_batch, out_channels, out_height, out_width
+        to_index(i, out_shape, out_idx)
+
+        total = 0
+        for in_channel in prange(in_channels):
+            for h in range(kh):
+                for w in range(kw):
+                    if reverse:
+                        h = kh - h - 1
+                        w = kw - w - 1
+
+                    curr_weight = weight[out_idx[1] * s20 + in_channel * s21 + h * s22 + w * s23]
+
+                    in_val = 0
+                    common_pos_offset = out_idx[0] * s10 + in_channel * s11
+                    if reverse:
+                        reverse_h = out_idx[2] - h
+                        reverse_w = out_idx[3] - w
+                        if reverse_h >= 0 and reverse_w >= 0:
+                            in_val = input[
+                                int(common_pos_offset + reverse_h * s12 + reverse_w * s13)
+                            ]
+                    else:
+                        forward_h = out_idx[2] + h
+                        forward_w = out_idx[3] + w
+                        if forward_h < height and forward_w < width:
+                            in_val = input[
+                                int(common_pos_offset + forward_h * s12 + forward_w * s13)
+                            ]
+                    total += curr_weight * in_val
+
+        out[index_to_position(out_idx, out_strides)] = total
 
 
 tensor_conv2d = njit(_tensor_conv2d, parallel=True, fastmath=True)
@@ -247,9 +288,7 @@ class Conv2dFun(Function):
         out_channels, in_channels2, kh, kw = weight.shape
         assert in_channels == in_channels2
         output = input.zeros((batch, out_channels, h, w))
-        tensor_conv2d(
-            *output.tuple(), output.size, *input.tuple(), *weight.tuple(), False
-        )
+        tensor_conv2d(*output.tuple(), output.size, *input.tuple(), *weight.tuple(), False)
         return output
 
     @staticmethod
@@ -261,23 +300,19 @@ class Conv2dFun(Function):
         grad_weight = grad_output.zeros((in_channels, out_channels, kh, kw))
         new_input = input.permute(1, 0, 2, 3)
         new_grad_output = grad_output.permute(1, 0, 2, 3)
-        tensor_conv2d(  # type: ignore
+        tensor_conv2d(  # type: ignore[call-arg]
             *grad_weight.tuple(),
             grad_weight.size,
             *new_input.tuple(),
             *new_grad_output.tuple(),
-            False,  # type: ignore
+            False,
         )
         grad_weight = grad_weight.permute(1, 0, 2, 3)
 
         grad_input = input.zeros((batch, in_channels, h, w))
         new_weight = weight.permute(1, 0, 2, 3)
-        tensor_conv2d(  # type: ignore
-            *grad_input.tuple(),
-            grad_input.size,  # type: ignore
-            *grad_output.tuple(),
-            *new_weight.tuple(),
-            True,  # type: ignore
+        tensor_conv2d(  # type: ignore[call-arg]
+            *grad_input.tuple(), grad_input.size, *grad_output.tuple(), *new_weight.tuple(), True
         )
         return grad_input, grad_weight
 

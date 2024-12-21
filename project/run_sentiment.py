@@ -34,8 +34,7 @@ class Conv1d(minitorch.Module):
         self.bias = RParam(1, out_channels, 1)
 
     def forward(self, input):
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        return minitorch.conv1d(input, self.weights.value) + self.bias.value
 
 
 class CNNSentimentKim(minitorch.Module):
@@ -48,7 +47,7 @@ class CNNSentimentKim(minitorch.Module):
         feature_map_size=100 output channels and [3, 4, 5]-sized kernels
         followed by a non-linear activation function (the paper uses tanh, we apply a ReLu)
     2. Apply max-over-time across each feature map
-    3. Apply a Linear to size C (number of classes) followed by a ReLU and Dropout with rate 25%
+    3. Apply a Linear to size C (number of classes) followed by a Dropout with rate 25%
     4. Apply a sigmoid over the class dimension.
     """
 
@@ -61,15 +60,27 @@ class CNNSentimentKim(minitorch.Module):
     ):
         super().__init__()
         self.feature_map_size = feature_map_size
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.conv1d_layers = [
+            Conv1d(embedding_size, feature_map_size, filter_size)
+            for filter_size in filter_sizes
+        ]
+        self.linear_layer = Linear(feature_map_size, 1)
+        self.dropout = dropout
 
     def forward(self, embeddings):
         """
         embeddings tensor: [batch x sentence length x embedding dim]
         """
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        batch, sentence_length, embedding_dim = embeddings.shape
+
+        x = embeddings.permute(0, 2, 1)  # expects batch, in_channels, width
+        convs = [conv(x).relu() for conv in self.conv1d_layers]  # feature maps
+
+        x = minitorch.max(convs[0], 2) + minitorch.max(convs[2], 2) + minitorch.max(convs[2], 2)  # max over time
+
+        x = self.linear_layer(x.view(x.shape[0], x.shape[1]))
+        x = minitorch.dropout(x, self.dropout, ignore=not self.training)
+        return x.sigmoid().view(batch)
 
 
 # Evaluation helper methods

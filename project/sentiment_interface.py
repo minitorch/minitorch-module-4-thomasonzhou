@@ -34,10 +34,10 @@ def load_glue_dataset():
 
 #  st.subheader("Encode training data as nxk Glove embeddings tensor representations")
 @st.cache(allow_output_mutation=True)
-def load_data(dataset, n_train, n_val):
+def load_data(_dataset, n_train, n_val):
     print("Loading embeddings... This can take a while the first time.")
     return encode_sentiment_data(
-        dataset,
+        _dataset,
         embeddings.GloveEmbedding(
             "wikipedia_gigaword", d_emb=EMBEDDING_SIZE, show_progress=True
         ),

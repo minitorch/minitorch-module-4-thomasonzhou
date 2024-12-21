@@ -8,16 +8,23 @@ from . import operators
 from .autodiff import Context
 
 if TYPE_CHECKING:
-    from typing import Tuple
+    from typing import Tuple, Any
 
     from .scalar import Scalar, ScalarLike
 
 
-def wrap_tuple(x: float | Tuple[float, ...]) -> Tuple[float, ...]:
+def wrap_tuple(x: Any) -> Tuple[Any]:
     """Turn a possible value into a tuple"""
     if isinstance(x, tuple):
         return x
     return (x,)
+
+
+def unwrap_tuple(x: Tuple[Any]) -> Any:
+    """Turn a singleton tuple into a value"""
+    if len(x) == 1:
+        return x[0]
+    return x
 
 
 class ScalarFunction:
@@ -37,7 +44,7 @@ class ScalarFunction:
         return cls.forward(ctx, *inps)  # type: ignore
 
     @classmethod
-    def apply(cls, *vals: ScalarLike) -> Scalar:
+    def apply(cls, *vals: "ScalarLike") -> Scalar:
         raw_vals = []
         scalars = []
         for v in vals:
@@ -45,7 +52,7 @@ class ScalarFunction:
                 scalars.append(v)
                 raw_vals.append(v.data)
             else:
-                scalars.append(minitorch.scalar.Scalar(v))
+                scalars.append(minitorch.scalar.Scalar(v, back=None))
                 raw_vals.append(v)
 
         # Create the context.
@@ -60,7 +67,6 @@ class ScalarFunction:
         return minitorch.scalar.Scalar(c, back)
 
 
-# Examples
 class Add(ScalarFunction):
     """Addition function $f(x, y) = x + y$"""
 
@@ -87,6 +93,104 @@ class Log(ScalarFunction):
         return operators.log_back(a, d_output)
 
 
-# To implement.
+class Mul(ScalarFunction):
+    """Multiplication function"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        ctx.save_for_backward(a, b)
+        return operators.mul(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        a, b = ctx.saved_values
+        return operators.mul(b, d_output), operators.mul(a, d_output)
 
 
+class Inv(ScalarFunction):
+    """Inverse function"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.inv(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        return operators.inv_back(unwrap_tuple(ctx.saved_values), d_output)
+
+
+class Neg(ScalarFunction):
+    """Negation function"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        return operators.neg(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        return operators.neg(d_output)
+
+
+class Sigmoid(ScalarFunction):
+    """Sigmoid function"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.sigmoid(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        a = unwrap_tuple(ctx.saved_values)
+        return d_output * operators.sigmoid(a) * (1.0 - operators.sigmoid(a))
+
+
+class ReLU(ScalarFunction):
+    """ReLU function"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.relu(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        return operators.relu_back(unwrap_tuple(ctx.saved_values), d_output)
+
+
+class Exp(ScalarFunction):
+    """Exp function"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
+        return operators.exp(a)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> float:
+        return operators.exp(unwrap_tuple(ctx.saved_values))
+
+
+class LT(ScalarFunction):
+    """Less-than function $f(x) =$ 1.0 if x is less than y else 0.0"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        return operators.lt(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        return (0.0, 0.0)
+
+
+class EQ(ScalarFunction):
+    """Equal function $f(x) =$ 1.0 if x is equal to y else 0.0"""
+
+    @staticmethod
+    def forward(ctx: Context, a: float, b: float) -> float:
+        return operators.eq(a, b)
+
+    @staticmethod
+    def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
+        return (0.0, 0.0)
