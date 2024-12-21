@@ -60,7 +60,6 @@ def _tensor_conv1d(
        `batch, out_channels, width`
 
     `reverse` decides if weight is anchored left (False) or right.
-    (See diagrams)
 
     Args:
     ----
@@ -135,7 +134,6 @@ class Conv1dFun(Function):
         out_channels, in_channels2, kw = weight.shape
         assert in_channels == in_channels2
 
-        # Run convolution
         output = input.zeros((batch, out_channels, w))
         tensor_conv1d(*output.tuple(), output.size, *input.tuple(), *weight.tuple(), False)
         return output
@@ -200,7 +198,6 @@ def _tensor_conv2d(
        `batch, out_channels, height, width`
 
     `Reverse` decides if weight is anchored top-left (False) or bottom-right.
-    (See diagrams)
 
 
     Args:

@@ -67,7 +67,6 @@ class ScalarFunction:
         return minitorch.scalar.Scalar(c, back)
 
 
-# Examples
 class Add(ScalarFunction):
     """Addition function $f(x, y) = x + y$"""
 
@@ -92,9 +91,6 @@ class Log(ScalarFunction):
     def backward(ctx: Context, d_output: float) -> float:
         (a,) = ctx.saved_values
         return operators.log_back(a, d_output)
-
-
-# To implement.
 
 
 class Mul(ScalarFunction):

@@ -88,22 +88,6 @@ class SimpleOps(TensorOps):
     def map(fn: Callable[[float], float]) -> MapProto:
         """Higher-order tensor map function ::
 
-          fn_map = map(fn)
-          fn_map(a, out)
-          out
-
-        Simple version::
-
-            for i:
-                for j:
-                    out[i, j] = fn(a[i, j])
-
-        Broadcasted version (`a` might be smaller than `out`) ::
-
-            for i:
-                for j:
-                    out[i, j] = fn(a[i, 0])
-
         Args:
             fn: function from float-to-float to apply.
             a (:class:`TensorData`): tensor to map over
@@ -127,22 +111,6 @@ class SimpleOps(TensorOps):
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[["Tensor", "Tensor"], "Tensor"]:
         """Higher-order tensor zip function ::
-
-          fn_zip = zip(fn)
-          out = fn_zip(a, b)
-
-        Simple version ::
-
-            for i:
-                for j:
-                    out[i, j] = fn(a[i, j], b[i, j])
-
-        Broadcasted version (`a` and `b` might be smaller than `out`) ::
-
-            for i:
-                for j:
-                    out[i, j] = fn(a[i, 0], b[0, j])
-
 
         Args:
             fn: function from two floats-to-float to apply
@@ -171,17 +139,6 @@ class SimpleOps(TensorOps):
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[["Tensor", int], "Tensor"]:
         """Higher-order tensor reduce function. ::
-
-          fn_reduce = reduce(fn)
-          out = fn_reduce(a, dim)
-
-        Simple version ::
-
-            for j:
-                out[1, j] = start
-                for i:
-                    out[1, j] = fn(out[1, j], a[i, j])
-
 
         Args:
             fn: function from two floats-to-float to apply
@@ -221,18 +178,6 @@ class SimpleOps(TensorOps):
 def tensor_map(fn: Callable[[float], float]) -> Any:
     """Low-level implementation of tensor map between
     tensors with *possibly different strides*.
-
-    Simple version:
-
-    * Fill in the `out` array by applying `fn` to each
-      value of `in_storage` assuming `out_shape` and `in_shape`
-      are the same size.
-
-    Broadcasted version:
-
-    * Fill in the `out` array by applying `fn` to each
-      value of `in_storage` assuming `out_shape` and `in_shape`
-      broadcast. (`in_shape` must be smaller than `out_shape`).
 
     Args:
         fn: function from float-to-float to apply

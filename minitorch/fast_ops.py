@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from .tensor import Tensor
     from .tensor_data import Index, Shape, Storage, Strides
 
-# TIP: Use `NUMBA_DISABLE_JIT=1 pytest tests/ -m task3_1` to run these tests without JIT.
+# TIP: Use `NUMBA_DISABLE_JIT=1 pytest .` to run these tests without JIT.
 
-# This code will JIT compile fast versions your tensor_data functions.
+# This code will JIT compile fast versions of tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
 FnFast = TypeVar("FnFast")
@@ -341,7 +341,7 @@ def _tensor_matrix_multiply(
             for k in prange(b_shape[-1]):
                 out_pos = batch * out_strides[0] + i * out_strides[1] + k * out_strides[2]
                 total = 0
-                for j in range(a_shape[-1]):  # common dim
+                for j in range(a_shape[-1]):  # common dim, serial
                     a_pos = batch * a_batch_stride + i * a_strides[1] + j * a_strides[2]
                     b_pos = batch * b_batch_stride + j * b_strides[1] + k * b_strides[2]
                     total += a_storage[a_pos] * b_storage[b_pos]

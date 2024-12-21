@@ -3,35 +3,6 @@
 import math
 from typing import Callable, Sequence
 
-# ## Task 0.1
-
-
-#
-# Implementation of a prelude of elementary functions.
-
-# Mathematical functions:
-# - mul
-# - id
-# - add
-# - neg
-# - lt
-# - eq
-# - max
-# - is_close
-# - sigmoid
-# - relu
-# - log
-# - exp
-# - log_back
-# - inv
-# - inv_back
-# - relu_back
-#
-# For sigmoid calculate as:
-# $f(x) =  \frac{1.0}{(1.0 + e^{-x})}$ if x >=0 else $\frac{e^x}{(1.0 + e^{x})}$
-# For is_close:
-# $f(x) = |x - y| < 1e-2$
-
 
 def mul(x: float, y: float) -> float:
     """Compute the product of x and y."""
@@ -124,21 +95,6 @@ def relu_back(x: float, deriv: float) -> float:
     return deriv
 
 
-# ## Task 0.3
-
-# Small practice library of elementary higher-order functions.
-
-
-# Implement the following core functions
-# - map
-# - zipWith
-# - reduce
-#
-# Use these to implement
-# - negList : negate a list
-# - addLists : add two lists together
-# - sum: sum lists
-# - prod: take the product of lists
 def map(f: Callable[[float], float], l1: list[float]) -> list[float]:
     """Apply a function f to each element of list l."""
     return [f(val) for val in l1]

@@ -7,17 +7,6 @@ from .tensor import Tensor
 from .tensor_functions import Function, rand
 
 
-# List of functions in this file:
-# - avgpool2d: Tiled average pooling 2D
-# - argmax: Compute the argmax as a 1-hot tensor
-# - Max: New Function for max operator
-# - max: Apply max reduction
-# - softmax: Compute the softmax as a tensor
-# - logsoftmax: Compute the log of the softmax as a tensor - See https://en.wikipedia.org/wiki/LogSumExp#log-sum-exp_trick_for_log-domain_calculations
-# - maxpool2d: Tiled max pooling 2D
-# - dropout: Dropout positions based on random noise, include an argument to turn off
-
-
 def tile(input: Tensor, kernel: Tuple[int, int]) -> Tuple[Tensor, int, int]:
     """Reshape an image tensor for 2D pooling
 
@@ -94,7 +83,7 @@ def max(t: Tensor, dim: int | None = None) -> Tensor:
 
 
 def softmax(t: Tensor, dim: int) -> Tensor:
-    """Continuous weighting of the probability distribution"""
+    """Continuous weighting of the probability distribution, a.k.a. argsoftmax"""
     return t.exp() / t.exp().sum(dim)
 
 
@@ -112,7 +101,7 @@ def maxpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
 
 
 def dropout(t: Tensor, probability: float, ignore: bool = False) -> Tensor:
-    """Drop values with likelihood 0.0 to 1.0"""
+    """Drop values with likelihood 0.0 to 1.0, where 1.0 represents dropping all values"""
     assert 0.0 <= probability <= 1.0
     if ignore or probability == 0:
         return t
