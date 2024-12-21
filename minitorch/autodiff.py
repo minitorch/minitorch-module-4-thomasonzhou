@@ -55,24 +55,23 @@ class Variable(Protocol):
 
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
-    """
-    Computes the topological order of the computation graph.
+    """Computes the topological order of the computation graph.
 
     Args:
         variable: The right-most variable
 
     Returns:
         Non-constant Variables in topological order starting from the right.
-    """
 
+    """
     # Kahn's algorithm
-    indegrees = {}
-    adj = {variable: []}
+    indegrees: dict[Variable, int] = {}
+    adj: dict[Variable, list[Variable]] = {variable: []}
 
     q = deque([variable])
     while len(q) > 0:
         v = q.popleft()
-        for i in v.history.inputs:
+        for i in v.history.inputs:  # type: ignore[attr-defined]
             if i.is_constant():
                 continue
             indegrees[i] = indegrees.get(i, 0) + 1

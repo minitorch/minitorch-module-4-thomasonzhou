@@ -20,10 +20,10 @@ if TYPE_CHECKING:
 # This code will JIT compile fast versions your tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
-Fn = TypeVar("Fn")
+FnFast = TypeVar("FnFast")
 
 
-def njit(fn: Fn, **kwargs: Any) -> Fn:
+def njit(fn: FnFast, **kwargs: Any) -> FnFast:
     """Wrapper for repeated JIT options"""
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
@@ -131,7 +131,7 @@ class FastOps(TensorOps):
 
 
 # Implementations
-@_njit
+@_njit  # type: ignore
 def _stride_aligned(shape_1: Shape, strides_1: Strides, shape_2: Shape, strides_2: Strides) -> bool:
     """Check if the shapes and strides allow for a one to one mapping of input to output position"""
     if len(shape_1) != len(shape_2):
@@ -185,7 +185,7 @@ def tensor_map(
                 in_pos = index_to_position(in_idx, in_strides)
                 out[out_pos] = fn(in_storage[in_pos])
 
-    return njit(_map, parallel=True)  # type: ignore
+    return njit(_map, parallel=True)
 
 
 def tensor_zip(
@@ -240,7 +240,7 @@ def tensor_zip(
 
                 out[out_pos] = fn(a_storage[a_pos], b_storage[b_pos])
 
-    return njit(_zip, parallel=True)  # type: ignore
+    return njit(_zip, parallel=True)
 
 
 def tensor_reduce(
@@ -287,7 +287,7 @@ def tensor_reduce(
                 reduced_val = fn(reduced_val, a_storage[a_start_pos + j * a_strides[reduce_dim]])
             out[out_pos] = reduced_val
 
-    return njit(_reduce, parallel=True)  # type: ignore
+    return njit(_reduce, parallel=True)
 
 
 def _tensor_matrix_multiply(

@@ -148,23 +148,23 @@ class Conv1dFun(Function):
         grad_weight = grad_output.zeros((in_channels, out_channels, kw))
         new_input = input.permute(1, 0, 2)
         new_grad_output = grad_output.permute(1, 0, 2)
-        tensor_conv1d(  # type: ignore
+        tensor_conv1d(  # type: ignore[call-arg]
             *grad_weight.tuple(),
             grad_weight.size,
             *new_input.tuple(),
             *new_grad_output.tuple(),
-            False,  # type: ignore
+            False,
         )
         grad_weight = grad_weight.permute(1, 0, 2)
 
         grad_input = input.zeros((batch, in_channels, w))
         new_weight = weight.permute(1, 0, 2)
-        tensor_conv1d(  # type: ignore
+        tensor_conv1d(  # type: ignore[call-arg]
             *grad_input.tuple(),
-            grad_input.size,  # type: ignore
+            grad_input.size,
             *grad_output.tuple(),
             *new_weight.tuple(),
-            True,  # type: ignore
+            True,
         )
         return grad_input, grad_weight
 
@@ -303,23 +303,19 @@ class Conv2dFun(Function):
         grad_weight = grad_output.zeros((in_channels, out_channels, kh, kw))
         new_input = input.permute(1, 0, 2, 3)
         new_grad_output = grad_output.permute(1, 0, 2, 3)
-        tensor_conv2d(  # type: ignore
+        tensor_conv2d(  # type: ignore[call-arg]
             *grad_weight.tuple(),
             grad_weight.size,
             *new_input.tuple(),
             *new_grad_output.tuple(),
-            False,  # type: ignore
+            False,
         )
         grad_weight = grad_weight.permute(1, 0, 2, 3)
 
         grad_input = input.zeros((batch, in_channels, h, w))
         new_weight = weight.permute(1, 0, 2, 3)
-        tensor_conv2d(  # type: ignore
-            *grad_input.tuple(),
-            grad_input.size,  # type: ignore
-            *grad_output.tuple(),
-            *new_weight.tuple(),
-            True,  # type: ignore
+        tensor_conv2d(  # type: ignore[call-arg]
+            *grad_input.tuple(), grad_input.size, *grad_output.tuple(), *new_weight.tuple(), True
         )
         return grad_input, grad_weight
 

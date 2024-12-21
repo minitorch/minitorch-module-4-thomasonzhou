@@ -87,7 +87,6 @@ class Network(minitorch.Module):
         return minitorch.logsoftmax(x, 1)
 
 
-
 def make_mnist(start, stop):
     ys = []
     X = []

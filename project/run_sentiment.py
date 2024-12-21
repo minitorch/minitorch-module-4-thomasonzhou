@@ -61,7 +61,7 @@ class CNNSentimentKim(minitorch.Module):
         super().__init__()
         self.feature_map_size = feature_map_size
         self.conv1d_layers = [
-            Conv1d(embedding_size, feature_map_size, filter_size) 
+            Conv1d(embedding_size, feature_map_size, filter_size)
             for filter_size in filter_sizes
         ]
         self.linear_layer = Linear(feature_map_size, 1)
@@ -73,15 +73,15 @@ class CNNSentimentKim(minitorch.Module):
         """
         batch, sentence_length, embedding_dim = embeddings.shape
 
-        x = embeddings.permute(0, 2, 1) # expects batch, in_channels, width
-        
-        convs = [conv(x).relu() for conv in self.conv1d_layers] # feature maps
+        x = embeddings.permute(0, 2, 1)  # expects batch, in_channels, width
+        convs = [conv(x).relu() for conv in self.conv1d_layers]  # feature maps
 
-        x = minitorch.max(convs[0], 2) + minitorch.max(convs[2], 2) + minitorch.max(convs[2], 2) # max over time
+        x = minitorch.max(convs[0], 2) + minitorch.max(convs[2], 2) + minitorch.max(convs[2], 2)  # max over time
 
         x = self.linear_layer(x.view(x.shape[0], x.shape[1]))
         x = minitorch.dropout(x, self.dropout, ignore=not self.training)
         return x.sigmoid().view(batch)
+
 
 # Evaluation helper methods
 def get_predictions_array(y_true, model_output):

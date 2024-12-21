@@ -76,7 +76,7 @@ class Max(Function):
         return max_reduce(t1, int(dim.item()))
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         """Compute argmax and multiply with the gradient"""
         (
             t1,

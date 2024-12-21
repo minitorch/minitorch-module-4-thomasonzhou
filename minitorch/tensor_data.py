@@ -278,6 +278,3 @@ class TensorData:
             else:
                 s += " "
         return s
-
-    def __repr__(self):
-        return f"TensorData(shape={self.shape}, dims={self.dims}, size={self.size}, storage={self._storage})"

@@ -26,10 +26,10 @@ FakeCUDAKernel = Any
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
 
-Fn = TypeVar("Fn")
+FnCUDA = TypeVar("FnCUDA")
 
 
-def device_jit(fn: Fn) -> Fn:
+def device_jit(fn: FnCUDA) -> FnCUDA:
     return _jit(device=True)(fn)  # type: ignore
 
 
