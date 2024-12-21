@@ -149,3 +149,7 @@ unfixable = []
 
 [tool.ruff.extend-per-file-ignores]
 "tests/**/*.py" = ["D"]
+
+[tool.mypy]
+plugins = 'numpy.typing.mypy_plugin'
+ignore_missing_imports = true

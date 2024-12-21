@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import numpy as np
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 from typing_extensions import Protocol
@@ -9,7 +9,7 @@ from .tensor_data import shape_broadcast, index_to_position, to_index, broadcast
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides
+    from .tensor_data import Index, Shape, Storage, Strides
 
 
 class MapProto(Protocol):
@@ -256,12 +256,11 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        out_idx = [0] * len(out_shape)
-        in_idx = [0] * len(in_shape)
+        out_idx: Index = np.empty_like(out_shape, np.int32)
+        in_idx: Index = np.empty_like(in_shape, np.int32)
 
         for i in range(len(out)):
             to_index(i, out_shape, out_idx)
-            # to_index(i, in_shape, in_idx)
             broadcast_index(out_idx, out_shape, in_shape, in_idx)
 
             out_pos = index_to_position(out_idx, out_strides)
@@ -315,9 +314,9 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        out_idx = [0] * len(out_shape)
-        a_idx = [0] * len(a_shape)
-        b_idx = [0] * len(b_shape)
+        out_idx: Index = np.empty_like(out_shape, np.int32)
+        a_idx: Index = np.empty_like(a_shape, np.int32)
+        b_idx: Index = np.empty_like(b_shape, np.int32)
 
         for i in range(len(out)):
             to_index(i, out_shape, out_idx)
@@ -363,8 +362,8 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        a_idx = [0] * len(a_shape)
-        out_idx = [0] * len(out_shape)
+        a_idx: Index = np.empty_like(a_shape, np.int32)
+        out_idx: Index = np.empty_like(out_shape, np.int32)
 
         for i in range(len(a_storage)):
             to_index(i, a_shape, a_idx)
